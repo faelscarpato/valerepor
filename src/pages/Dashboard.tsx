@@ -181,7 +181,7 @@ export default function Dashboard() {
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/10 text-primary"><FileBarChart className="h-5 w-5" /></div>
             <div><div className="font-black">Resumo pronto para conferência</div><div className="text-sm text-muted-foreground">Use relatórios para filtrar por setor, produto, status e responsável.</div></div>
           </div>
-          <Button asChild className="rounded-2xl"><Link to="/relatorios">Abrir relatórios</Link></Button>
+          <Button asChild className="rounded-2xl text-white"><Link to="/relatorios">Abrir relatórios</Link></Button>
         </div>
       </Card>
     </div>
