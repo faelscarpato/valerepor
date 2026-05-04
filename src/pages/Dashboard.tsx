@@ -66,10 +66,10 @@ export default function Dashboard() {
 
         <div className="relative grid gap-5 md:grid-cols-[1fr_auto] md:items-center">
           <div>
-            <div className="mb-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-bold backdrop-blur">
+            <div className="mb-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs text-white font-bold backdrop-blur">
               Controle de validade e reposição
             </div>
-            <h1 className="text-3xl font-black tracking-tight md:text-5xl">Dashboard</h1>
+            <h1 className="text-3xl font-black tracking-tight text-white md:text-5xl">Dashboard</h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85 md:text-base">
               Acompanhe os vencimentos das prateleiras, priorize retiradas e registre novas reposições em poucos toques.
             </p>
