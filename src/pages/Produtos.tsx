@@ -93,6 +93,16 @@ export default function Produtos() {
           </Card>
         ))}
       </div>
+
+      <BarcodeScanner
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        onDetected={(code) => {
+          setForm((f) => ({ ...f, codigoBarras: code }));
+          if (!open) setOpen(true);
+          toast.success("Código lido", { description: code });
+        }}
+      />
     </div>
   );
 }
