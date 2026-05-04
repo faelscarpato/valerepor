@@ -60,7 +60,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5 md:space-y-7">
-      <section className="relative overflow-hidden rounded-[32px] bg-gradient-primary p-5 text-primary shadow-elevated md:p-8">
+      <section className="relative overflow-hidden rounded-[32px] bg-gradient-primary p-5 text-[#015e23] shadow-elevated md:p-8">
         <div className="absolute -right-20 -top-24 h-56 w-56 rounded-full bg-white/15 blur-2xl" />
         <div className="absolute -bottom-24 left-1/2 h-52 w-52 rounded-full bg-emerald-900/20 blur-2xl" />
 
@@ -76,7 +76,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
-            <Button asChild size="lg" className="h-12 rounded-2xl bg-white text-primary shadow-lg hover:bg-white/90">
+            <Button asChild size="lg" className="h-12 rounded-2xl bg-white text-[#015e23] shadow-lg hover:bg-white/90">
               <Link to="/nova" clasName="text-primary">
                 <PlusCircle className="h-5 w-5 text-[#015e23]" /> Nova Reposição
               </Link>
