@@ -60,7 +60,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5 md:space-y-7">
-      <section className="relative overflow-hidden rounded-[32px] bg-gradient-primary p-5 text-primary-foreground shadow-elevated md:p-8">
+      <section className="relative overflow-hidden rounded-[32px] bg-gradient-primary p-5 text-primary shadow-elevated md:p-8">
         <div className="absolute -right-20 -top-24 h-56 w-56 rounded-full bg-white/15 blur-2xl" />
         <div className="absolute -bottom-24 left-1/2 h-52 w-52 rounded-full bg-emerald-900/20 blur-2xl" />
 
