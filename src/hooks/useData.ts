@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  getHistorico,
   getLocais,
   getProdutos,
   getReposicoes,
@@ -20,6 +21,7 @@ export function useData() {
     produtos: getProdutos(),
     locais: getLocais(),
     reposicoes: getReposicoes(),
+    historico: getHistorico(),
     _tick: tick,
   };
 }

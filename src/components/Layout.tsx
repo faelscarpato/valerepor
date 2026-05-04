@@ -29,11 +29,11 @@ export default function Layout() {
         <div className="px-6 py-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-lg bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold">
-              AP
+              VR
             </div>
             <div>
-              <div className="font-bold text-sidebar-foreground leading-tight">Alerta Prateleira</div>
-              <div className="text-xs text-muted-foreground">Validade & Reposição</div>
+              <div className="font-bold text-sidebar-foreground leading-tight">ValeRepor</div>
+              <div className="text-xs text-muted-foreground">Controle de validade</div>
             </div>
           </div>
         </div>
@@ -58,7 +58,7 @@ export default function Layout() {
           ))}
         </nav>
         <div className="p-4 text-xs text-muted-foreground border-t border-sidebar-border">
-          v1.0 · Modo offline
+          v1.1 · Modo offline
         </div>
       </aside>
 
@@ -68,9 +68,9 @@ export default function Layout() {
         <header className="md:hidden flex items-center justify-between px-4 h-14 border-b bg-card">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-md bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              AP
+              VR
             </div>
-            <span className="font-semibold">Alerta Prateleira</span>
+            <span className="font-semibold">ValeRepor</span>
           </div>
         </header>
 

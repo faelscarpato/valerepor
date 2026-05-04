@@ -1,7 +1,7 @@
 {
-  "name": "Alerta Prateleira",
-  "short_name": "Prateleira",
-  "description": "Controle de validade e reposição de produtos em supermercados.",
+  "name": "ValeRepor",
+  "short_name": "ValeRepor",
+  "description": "Controle de validade e reposição para supermercados.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

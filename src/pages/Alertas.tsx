@@ -2,25 +2,47 @@ import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useData } from "@/hooks/useData";
-import { diasRestantes, faixa, getReposicoes, setReposicoes } from "@/lib/storage";
-import { StatusReposicao, STATUS_LABEL } from "@/lib/types";
+import { diasRestantes, faixa, getReposicoes, registrarAlteracaoStatus, setReposicoes } from "@/lib/storage";
+import { Reposicao, StatusReposicao, STATUS_LABEL } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Search } from "lucide-react";
+import { MoreVertical, Pencil, Search } from "lucide-react";
+
+type EditForm = {
+  produtoId: string;
+  localId: string;
+  quantidade: string;
+  lote: string;
+  dataReposicao: string;
+  dataValidade: string;
+  responsavel: string;
+  observacao: string;
+};
 
 export default function Alertas() {
   const { reposicoes, produtos, locais } = useData();
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<string>("todos");
   const [statusF, setStatusF] = useState<string>("ativo");
+  const [editando, setEditando] = useState<Reposicao | null>(null);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
 
   const lista = useMemo(() => {
     return reposicoes
@@ -35,22 +57,91 @@ export default function Alertas() {
         if (filtro === "todos") return true;
         return f === filtro;
       })
-      .filter(({ p, l }) => {
+      .filter(({ p, l, r }) => {
         if (!busca) return true;
         const q = busca.toLowerCase();
         return (
           p?.nome.toLowerCase().includes(q) ||
+          p?.codigoBarras.toLowerCase().includes(q) ||
           l?.setor.toLowerCase().includes(q) ||
-          l?.prateleira.toLowerCase().includes(q)
+          l?.prateleira.toLowerCase().includes(q) ||
+          r.lote?.toLowerCase().includes(q)
         );
       })
       .sort((a, b) => a.dias - b.dias);
   }, [reposicoes, produtos, locais, busca, filtro, statusF]);
 
   function alterarStatus(id: string, status: StatusReposicao) {
-    const novo = getReposicoes().map((r) => (r.id === id ? { ...r, status } : r));
+    const atual = getReposicoes().find((r) => r.id === id);
+    if (!atual) return;
+
+    if (atual.status !== status) {
+      registrarAlteracaoStatus(atual, status, atual.responsavel);
+    }
+
+    const novo = getReposicoes().map((r) =>
+      r.id === id
+        ? { ...r, status, statusAlteradoEm: new Date().toISOString(), statusResponsavel: r.responsavel, atualizadoEm: new Date().toISOString() }
+        : r
+    );
     setReposicoes(novo);
     toast.success(`Marcado como: ${STATUS_LABEL[status]}`);
+  }
+
+  function abrirEdicao(r: Reposicao) {
+    setEditando(r);
+    setEditForm({
+      produtoId: r.produtoId,
+      localId: r.localId,
+      quantidade: String(r.quantidade),
+      lote: r.lote ?? "",
+      dataReposicao: r.dataReposicao,
+      dataValidade: r.dataValidade,
+      responsavel: r.responsavel,
+      observacao: r.observacao ?? "",
+    });
+  }
+
+  function salvarEdicao() {
+    if (!editando || !editForm) return;
+    const quantidade = Number(editForm.quantidade);
+
+    if (!editForm.produtoId || !editForm.localId || !editForm.quantidade || !editForm.dataValidade || !editForm.responsavel.trim()) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    if (!Number.isFinite(quantidade) || quantidade <= 0) {
+      toast.error("A quantidade deve ser maior que zero.");
+      return;
+    }
+
+    if (editForm.dataValidade < editForm.dataReposicao) {
+      toast.error("A validade está antes da data de reposição.");
+      return;
+    }
+
+    setReposicoes(
+      getReposicoes().map((r) =>
+        r.id === editando.id
+          ? {
+              ...r,
+              produtoId: editForm.produtoId,
+              localId: editForm.localId,
+              quantidade,
+              lote: editForm.lote.trim(),
+              dataReposicao: editForm.dataReposicao,
+              dataValidade: editForm.dataValidade,
+              responsavel: editForm.responsavel.trim(),
+              observacao: editForm.observacao.trim(),
+              atualizadoEm: new Date().toISOString(),
+            }
+          : r
+      )
+    );
+    toast.success("Reposição atualizada!");
+    setEditando(null);
+    setEditForm(null);
   }
 
   return (
@@ -64,7 +155,7 @@ export default function Alertas() {
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar produto, setor ou prateleira"
+            placeholder="Buscar produto, setor, lote, código ou prateleira"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="pl-9"
@@ -123,6 +214,11 @@ export default function Alertas() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold truncate">{p?.nome ?? "—"}</h3>
+                    {r.lote && (
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                        Lote {r.lote}
+                      </span>
+                    )}
                     {r.status !== "ativo" && (
                       <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground">
                         {STATUS_LABEL[r.status]}
@@ -130,14 +226,14 @@ export default function Alertas() {
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
-                    {l?.setor} · Corredor {l?.corredor} · {l?.prateleira}
+                    {l?.setor} · Corredor {l?.corredor || "—"} · {l?.prateleira}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    Validade: {new Date(r.dataValidade + "T00:00:00").toLocaleDateString("pt-BR")} ·
-                    Qtd: {r.quantidade} {p?.unidade} · Resp: {r.responsavel}
+                    Validade: {new Date(r.dataValidade + "T00:00:00").toLocaleDateString("pt-BR")} · Qtd: {r.quantidade} {p?.unidade} · Resp: {r.responsavel}
                   </div>
+                  {r.observacao && <p className="text-xs text-muted-foreground mt-1 italic">{r.observacao}</p>}
                 </div>
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-col items-end gap-2 shrink-0">
                   <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap", color)}>
                     {dias < 0 ? `Vencido há ${Math.abs(dias)}d` : `${dias} dias`}
                   </span>
@@ -148,7 +244,8 @@ export default function Alertas() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => alterarStatus(r.id, "conferido")}>Marcar como conferido</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => abrirEdicao(r)}><Pencil className="w-4 h-4 mr-2" />Editar lançamento</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => alterarStatus(r.id, "conferido")}>Conferido hoje</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => alterarStatus(r.id, "retirado")}>Retirado da prateleira</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => alterarStatus(r.id, "vendido")}>Vendido</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => alterarStatus(r.id, "descartado")}>Descartado</DropdownMenuItem>
@@ -162,6 +259,44 @@ export default function Alertas() {
           );
         })}
       </div>
+
+      <Dialog open={!!editando} onOpenChange={(v) => !v && setEditando(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Editar reposição</DialogTitle></DialogHeader>
+          {editForm && (
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Produto *</Label>
+                <Select value={editForm.produtoId} onValueChange={(v) => setEditForm({ ...editForm, produtoId: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {produtos.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome} — {p.marca || "sem marca"}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Setor / Prateleira *</Label>
+                <Select value={editForm.localId} onValueChange={(v) => setEditForm({ ...editForm, localId: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {locais.map((l) => <SelectItem key={l.id} value={l.id}>{l.setor} · Corredor {l.corredor || "—"} · {l.prateleira}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5"><Label>Quantidade *</Label><Input type="number" min="1" value={editForm.quantidade} onChange={(e) => setEditForm({ ...editForm, quantidade: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>Lote</Label><Input value={editForm.lote} onChange={(e) => setEditForm({ ...editForm, lote: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>Data de reposição *</Label><Input type="date" value={editForm.dataReposicao} onChange={(e) => setEditForm({ ...editForm, dataReposicao: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>Data de validade *</Label><Input type="date" value={editForm.dataValidade} onChange={(e) => setEditForm({ ...editForm, dataValidade: e.target.value })} /></div>
+              <div className="space-y-1.5 sm:col-span-2"><Label>Responsável *</Label><Input value={editForm.responsavel} onChange={(e) => setEditForm({ ...editForm, responsavel: e.target.value })} /></div>
+              <div className="space-y-1.5 sm:col-span-2"><Label>Observação</Label><Textarea rows={2} value={editForm.observacao} onChange={(e) => setEditForm({ ...editForm, observacao: e.target.value })} /></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditando(null)}>Cancelar</Button>
+            <Button className="bg-gradient-primary" onClick={salvarEdicao}>Salvar alterações</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

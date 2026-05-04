@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Camera, X } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 
 type Props = {
   open: boolean;
@@ -16,47 +15,79 @@ type Props = {
   onDetected: (code: string) => void;
 };
 
+type DetectedBarcode = { rawValue: string };
+type BarcodeDetectorLike = {
+  detect: (source: HTMLVideoElement) => Promise<DetectedBarcode[]>;
+};
+type BarcodeDetectorCtor = new (options?: { formats?: string[] }) => BarcodeDetectorLike;
+
+declare global {
+  interface Window {
+    BarcodeDetector?: BarcodeDetectorCtor;
+  }
+}
+
 export default function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const controlsRef = useRef<IScannerControls | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    setErro(null);
-    const reader = new BrowserMultiFormatReader();
     let cancelled = false;
+    let interval: number | undefined;
 
-    (async () => {
+    async function iniciar() {
+      setErro(null);
+      if (!window.BarcodeDetector) {
+        const msg = "Este navegador não possui leitor nativo de código de barras. Digite o código manualmente ou use Chrome/Android.";
+        setErro(msg);
+        toast.error("Leitor indisponível", { description: msg });
+        return;
+      }
+
       try {
-        const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-        const back = devices.find((d) => /back|traseira|environment/i.test(d.label)) ?? devices[devices.length - 1];
-        if (!videoRef.current) return;
-        const controls = await reader.decodeFromVideoDevice(
-          back?.deviceId,
-          videoRef.current,
-          (result, err, ctrl) => {
-            if (cancelled) return;
-            if (result) {
-              const text = result.getText();
-              ctrl.stop();
-              onDetected(text);
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        });
+        streamRef.current = stream;
+        if (!videoRef.current || cancelled) return;
+
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+
+        const detector = new window.BarcodeDetector({
+          formats: ["ean_13", "ean_8", "code_128", "code_39", "upc_a", "upc_e"],
+        });
+
+        interval = window.setInterval(async () => {
+          if (cancelled || !videoRef.current) return;
+          try {
+            const results = await detector.detect(videoRef.current);
+            const code = results[0]?.rawValue;
+            if (code) {
+              onDetected(code);
               onOpenChange(false);
             }
+          } catch {
+            // ignora falhas pontuais de leitura enquanto a câmera está aberta
           }
-        );
-        controlsRef.current = controls;
+        }, 700);
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : "Não foi possível acessar a câmera.";
         setErro(msg);
         toast.error("Erro ao acessar câmera", { description: msg });
       }
-    })();
+    }
+
+    iniciar();
 
     return () => {
       cancelled = true;
-      controlsRef.current?.stop();
-      controlsRef.current = null;
+      if (interval) window.clearInterval(interval);
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     };
   }, [open, onDetected, onOpenChange]);
 

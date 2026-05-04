@@ -17,7 +17,7 @@ export function getNotifyConfig(): NotifyConfig {
   } catch {
     // ignore parse errors
   }
-  return { enabled: false, diasAntecedencia: 7 };
+  return { enabled: false, diasAntecedencia: 30 };
 }
 
 export function setNotifyConfig(cfg: NotifyConfig) {
@@ -79,7 +79,8 @@ export async function verificarEnotificar(force = false): Promise<number> {
       f === "vencido"
         ? `⚠️ Produto vencido: ${p?.nome ?? ""}`
         : `⏰ Vence em ${dias}d: ${p?.nome ?? ""}`;
-    const corpo = `${l?.setor ?? ""} · ${l?.prateleira ?? ""} · Qtd ${r.quantidade}`;
+    const lote = r.lote ? ` · Lote ${r.lote}` : "";
+    const corpo = `${l?.setor ?? ""} · ${l?.prateleira ?? ""} · Qtd ${r.quantidade}${lote}`;
 
     try {
       if (reg && "showNotification" in reg) {
@@ -106,7 +107,8 @@ export async function verificarEnotificar(force = false): Promise<number> {
 }
 
 export function iniciarVerificacaoPeriodica() {
-  // Verifica imediatamente e depois a cada 6 horas enquanto a aba estiver aberta
+  // Verifica imediatamente e depois a cada 6 horas enquanto a aba estiver aberta.
+  // Notificação 100% garantida com o app fechado exige suporte do navegador/PWA.
   verificarEnotificar();
   setInterval(() => verificarEnotificar(), 6 * 60 * 60 * 1000);
   document.addEventListener("visibilitychange", () => {

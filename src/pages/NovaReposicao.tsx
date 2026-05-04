@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useData } from "@/hooks/useData";
 import { getReposicoes, setReposicoes, uid } from "@/lib/storage";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 
 export default function NovaReposicao() {
   const navigate = useNavigate();
@@ -19,6 +19,7 @@ export default function NovaReposicao() {
     produtoId: "",
     localId: "",
     quantidade: "",
+    lote: "",
     dataReposicao: today,
     dataValidade: "",
     responsavel: "",
@@ -31,21 +32,37 @@ export default function NovaReposicao() {
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.produtoId || !form.localId || !form.quantidade || !form.dataValidade || !form.responsavel) {
+    const quantidade = Number(form.quantidade);
+
+    if (!form.produtoId || !form.localId || !form.quantidade || !form.dataValidade || !form.responsavel.trim()) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
+
+    if (!Number.isFinite(quantidade) || quantidade <= 0) {
+      toast.error("A quantidade deve ser maior que zero.");
+      return;
+    }
+
+    if (form.dataValidade < form.dataReposicao) {
+      toast.error("A validade está antes da data de reposição.", {
+        description: "Confira a data antes de salvar este lançamento.",
+      });
+      return;
+    }
+
     const novo = [
       ...getReposicoes(),
       {
         id: uid(),
         produtoId: form.produtoId,
         localId: form.localId,
-        quantidade: Number(form.quantidade),
+        quantidade,
+        lote: form.lote.trim(),
         dataReposicao: form.dataReposicao,
         dataValidade: form.dataValidade,
-        responsavel: form.responsavel,
-        observacao: form.observacao,
+        responsavel: form.responsavel.trim(),
+        observacao: form.observacao.trim(),
         status: "ativo" as const,
         criadoEm: new Date().toISOString(),
       },
@@ -59,7 +76,7 @@ export default function NovaReposicao() {
     <div className="space-y-5 max-w-2xl mx-auto">
       <header>
         <h1 className="text-2xl md:text-3xl font-bold">Nova Reposição</h1>
-        <p className="text-muted-foreground text-sm">Registre um produto colocado na prateleira</p>
+        <p className="text-muted-foreground text-sm">Registre produto, lote, prateleira e validade</p>
       </header>
 
       <Card className="p-5 md:p-6 shadow-card">
@@ -71,7 +88,7 @@ export default function NovaReposicao() {
                 <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
                 <SelectContent>
                   {produtos.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome} — {p.marca}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{p.nome} — {p.marca || "sem marca"}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -83,7 +100,7 @@ export default function NovaReposicao() {
                 <SelectContent>
                   {locais.map((l) => (
                     <SelectItem key={l.id} value={l.id}>
-                      {l.setor} · Corredor {l.corredor} · {l.prateleira}
+                      {l.setor} · Corredor {l.corredor || "—"} · {l.prateleira}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -99,6 +116,14 @@ export default function NovaReposicao() {
               />
             </div>
             <div className="space-y-1.5">
+              <Label>Lote</Label>
+              <Input
+                value={form.lote}
+                onChange={(e) => update("lote", e.target.value)}
+                placeholder="Ex.: L-0426"
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label>Responsável *</Label>
               <Input
                 value={form.responsavel}
@@ -110,7 +135,7 @@ export default function NovaReposicao() {
               <Label>Data de reposição *</Label>
               <Input type="date" value={form.dataReposicao} onChange={(e) => update("dataReposicao", e.target.value)} />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-2">
               <Label>Data de validade *</Label>
               <Input type="date" value={form.dataValidade} onChange={(e) => update("dataValidade", e.target.value)} />
             </div>
