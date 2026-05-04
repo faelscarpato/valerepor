@@ -76,7 +76,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
-            <Button asChild size="lg" className="h-12 rounded-2xl bg-white text-primary shadow-lg hover:bg-white/90">
+            <Button asChild size="lg" className="h-12 rounded-2xl bg-white text-[#015e23] shadow-lg hover:bg-white/90">
               <Link to="/nova">
                 <PlusCircle className="h-5 w-5" /> Nova Reposição
               </Link>
