@@ -11,7 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, ScanBarcode, Trash2 } from "lucide-react";
+import BarcodeScanner from "@/components/BarcodeScanner";
 import { useData } from "@/hooks/useData";
 import { getProdutos, setProdutos, uid } from "@/lib/storage";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ import { toast } from "sonner";
 export default function Produtos() {
   const { produtos } = useData();
   const [open, setOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [form, setForm] = useState({ nome: "", codigoBarras: "", categoria: "", marca: "", unidade: "un" });
 
   function salvar() {
@@ -50,7 +52,19 @@ export default function Produtos() {
             <div className="space-y-3">
               <div className="space-y-1.5"><Label>Nome *</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5"><Label>Código de barras</Label><Input value={form.codigoBarras} onChange={(e) => setForm({ ...form, codigoBarras: e.target.value })} /></div>
+                <div className="space-y-1.5">
+                  <Label>Código de barras</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={form.codigoBarras}
+                      onChange={(e) => setForm({ ...form, codigoBarras: e.target.value })}
+                      placeholder="Digite ou escaneie"
+                    />
+                    <Button type="button" variant="outline" size="icon" onClick={() => setScanOpen(true)} title="Ler com a câmera">
+                      <ScanBarcode className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
                 <div className="space-y-1.5"><Label>Unidade</Label><Input value={form.unidade} onChange={(e) => setForm({ ...form, unidade: e.target.value })} placeholder="un, kg, L" /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -79,6 +93,16 @@ export default function Produtos() {
           </Card>
         ))}
       </div>
+
+      <BarcodeScanner
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        onDetected={(code) => {
+          setForm((f) => ({ ...f, codigoBarras: code }));
+          if (!open) setOpen(true);
+          toast.success("Código lido", { description: code });
+        }}
+      />
     </div>
   );
 }

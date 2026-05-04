@@ -6,6 +6,7 @@ import {
   PlusCircle,
   Bell,
   FileBarChart,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ const nav = [
   { to: "/produtos", label: "Produtos", icon: Package },
   { to: "/locais", label: "Setores", icon: MapPin },
   { to: "/relatorios", label: "Relatórios", icon: FileBarChart },
+  { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 export default function Layout() {
