@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Pencil, Search } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, MoreVertical, PackageCheck, Pencil, Search, ShieldCheck, Trash2 } from "lucide-react";
 
 type EditForm = {
   produtoId: string;
@@ -43,6 +43,21 @@ export default function Alertas() {
   const [statusF, setStatusF] = useState<string>("ativo");
   const [editando, setEditando] = useState<Reposicao | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
+
+  const resumo = useMemo(() => {
+    const ativos = reposicoes.filter((r) => r.status === "ativo");
+    return ativos.reduce(
+      (acc, r) => {
+        const f = faixa(diasRestantes(r.dataValidade));
+        if (f === "vencido") acc.vencidos += 1;
+        else if (f === "7") acc.d7 += 1;
+        else if (f === "15") acc.d15 += 1;
+        else if (f === "30") acc.d30 += 1;
+        return acc;
+      },
+      { vencidos: 0, d7: 0, d15: 0, d30: 0 }
+    );
+  }, [reposicoes]);
 
   const lista = useMemo(() => {
     return reposicoes
@@ -79,13 +94,16 @@ export default function Alertas() {
       registrarAlteracaoStatus(atual, status, atual.responsavel);
     }
 
+    const agora = new Date().toISOString();
     const novo = getReposicoes().map((r) =>
       r.id === id
-        ? { ...r, status, statusAlteradoEm: new Date().toISOString(), statusResponsavel: r.responsavel, atualizadoEm: new Date().toISOString() }
+        ? { ...r, status, statusAlteradoEm: agora, statusResponsavel: r.responsavel, atualizadoEm: agora }
         : r
     );
     setReposicoes(novo);
-    toast.success(`Marcado como: ${STATUS_LABEL[status]}`);
+    toast.success(`Marcado como: ${STATUS_LABEL[status]}`, {
+      description: "A ação foi registrada no histórico operacional.",
+    });
   }
 
   function abrirEdicao(r: Reposicao) {
@@ -146,9 +164,33 @@ export default function Alertas() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-2xl md:text-3xl font-bold">Alertas de Validade</h1>
-        <p className="text-muted-foreground text-sm">Gerencie os produtos próximos do vencimento</p>
+      <header className="space-y-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight">Alertas de validade</h1>
+          <p className="text-muted-foreground text-sm">Priorize vencidos, trate próximos do vencimento e registre a ação em poucos toques.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <button type="button" onClick={() => setFiltro("vencido")} className="rounded-3xl border border-destructive/20 bg-destructive/10 p-4 text-left shadow-card transition hover:-translate-y-0.5">
+            <AlertTriangle className="mb-2 h-5 w-5 text-destructive" />
+            <div className="text-2xl font-black">{resumo.vencidos}</div>
+            <div className="text-xs font-bold text-destructive">Vencidos</div>
+          </button>
+          <button type="button" onClick={() => setFiltro("7")} className="rounded-3xl border border-destructive/20 bg-card p-4 text-left shadow-card transition hover:-translate-y-0.5">
+            <Clock className="mb-2 h-5 w-5 text-destructive" />
+            <div className="text-2xl font-black">{resumo.d7}</div>
+            <div className="text-xs font-bold text-muted-foreground">Até 7 dias</div>
+          </button>
+          <button type="button" onClick={() => setFiltro("15")} className="rounded-3xl border border-warning/20 bg-warning/10 p-4 text-left shadow-card transition hover:-translate-y-0.5">
+            <ShieldCheck className="mb-2 h-5 w-5 text-warning" />
+            <div className="text-2xl font-black">{resumo.d15}</div>
+            <div className="text-xs font-bold text-muted-foreground">Até 15 dias</div>
+          </button>
+          <button type="button" onClick={() => setFiltro("30")} className="rounded-3xl border border-caution/20 bg-caution/20 p-4 text-left shadow-card transition hover:-translate-y-0.5">
+            <PackageCheck className="mb-2 h-5 w-5 text-caution-foreground" />
+            <div className="text-2xl font-black">{resumo.d30}</div>
+            <div className="text-xs font-bold text-muted-foreground">Até 30 dias</div>
+          </button>
+        </div>
       </header>
 
       <Card className="p-4 shadow-card flex flex-col md:flex-row gap-3">
@@ -209,7 +251,7 @@ export default function Alertas() {
               : "border-l-success";
 
           return (
-            <Card key={r.id} className={cn("p-4 shadow-card border-l-4", borderColor)}>
+            <Card key={r.id} className={cn("overflow-hidden p-4 shadow-card border-l-4", borderColor)}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -231,12 +273,29 @@ export default function Alertas() {
                   <div className="text-xs text-muted-foreground mt-1">
                     Validade: {new Date(r.dataValidade + "T00:00:00").toLocaleDateString("pt-BR")} · Qtd: {r.quantidade} {p?.unidade} · Resp: {r.responsavel}
                   </div>
+                  {r.statusAlteradoEm && (
+                    <div className="mt-2 text-[11px] font-medium text-muted-foreground">
+                      Última ação: {new Date(r.statusAlteradoEm).toLocaleString("pt-BR")}
+                    </div>
+                  )}
                   {r.observacao && <p className="text-xs text-muted-foreground mt-1 italic">{r.observacao}</p>}
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap", color)}>
                     {dias < 0 ? `Vencido há ${Math.abs(dias)}d` : `${dias} dias`}
                   </span>
+                  <div className="hidden sm:flex gap-1">
+                    <Button size="sm" variant="outline" className="h-8 rounded-xl" onClick={() => alterarStatus(r.id, "conferido")}>
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Conferido
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 rounded-xl text-destructive hover:text-destructive" onClick={() => alterarStatus(r.id, "retirado")}>
+                      <Trash2 className="h-3.5 w-3.5" /> Retirar
+                    </Button>
+                  </div>
+                  <div className="grid w-full grid-cols-2 gap-1 sm:hidden">
+                    <Button size="sm" variant="outline" className="h-9 rounded-xl text-xs" onClick={() => alterarStatus(r.id, "conferido")}>Conferido</Button>
+                    <Button size="sm" variant="outline" className="h-9 rounded-xl text-xs text-destructive" onClick={() => alterarStatus(r.id, "retirado")}>Retirar</Button>
+                  </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">

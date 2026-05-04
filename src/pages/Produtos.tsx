@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +11,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Pencil, Plus, ScanBarcode, Trash2 } from "lucide-react";
+import { Download, FileUp, Pencil, Plus, ScanBarcode, Trash2 } from "lucide-react";
 import BarcodeScanner from "@/components/BarcodeScanner";
 import { useData } from "@/hooks/useData";
-import { getProdutos, getReposicoes, setProdutos, uid } from "@/lib/storage";
+import { getProdutos, getReposicoes, importarProdutosCSV, modeloCSVProdutos, registrarEvento, setProdutos, uid } from "@/lib/storage";
 import { toast } from "@/components/ui/sonner";
 
 type ProdutoForm = {
@@ -92,7 +92,42 @@ export default function Produtos() {
       toast.success("Produto cadastrado!");
     }
 
+    if (editId) {
+      registrarEvento({ tipo: "edicao", entidade: "produto", entidadeId: editId, descricao: `Produto editado: ${payload.nome}` });
+    } else {
+      registrarEvento({ tipo: "criacao", entidade: "produto", descricao: `Produto criado: ${payload.nome}` });
+    }
     fechar(false);
+  }
+
+  async function importarCSV(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const texto = await file.text();
+      const resultado = importarProdutosCSV(texto);
+      toast.success("CSV de produtos importado", {
+        description: `${resultado.criados} criado(s), ${resultado.atualizados} atualizado(s), ${resultado.ignorados} ignorado(s).`,
+      });
+      if (resultado.erros.length) {
+        console.warn("Erros na importação CSV", resultado.erros);
+      }
+    } catch (error) {
+      toast.error("Não foi possível importar o CSV.", {
+        description: error instanceof Error ? error.message : "Arquivo inválido.",
+      });
+    }
+  }
+
+  function baixarModeloCSV() {
+    const blob = new Blob(["\uFEFF" + modeloCSVProdutos()], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "modelo-produtos-valerepor.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   function excluir(id: string) {
@@ -111,11 +146,17 @@ export default function Produtos() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center justify-between gap-3">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Produtos</h1>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight">Produtos</h1>
           <p className="text-muted-foreground text-sm">Cadastro de produtos do supermercado</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={baixarModeloCSV}><Download className="w-4 h-4" /> Modelo CSV</Button>
+          <Input id="produtos-csv" type="file" accept=".csv,text/csv" className="hidden" onChange={importarCSV} />
+          <Button asChild variant="outline">
+            <Label htmlFor="produtos-csv" className="cursor-pointer"><FileUp className="w-4 h-4" /> Importar CSV</Label>
+          </Button>
         <Dialog open={open} onOpenChange={fechar}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-primary" onClick={abrirNovo}><Plus className="w-4 h-4" /> Novo</Button>
@@ -148,6 +189,7 @@ export default function Produtos() {
             <DialogFooter><Button onClick={salvar} className="bg-gradient-primary">Salvar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </header>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">

@@ -40,20 +40,34 @@ export type Reposicao = {
   statusResponsavel?: string;
 };
 
+export type TipoHistorico =
+  | "status"
+  | "criacao"
+  | "edicao"
+  | "importacao"
+  | "backup"
+  | "limpeza"
+  | "sistema";
+
 export type HistoricoAcao = {
   id: string;
-  reposicaoId: string;
-  statusAnterior: StatusReposicao;
-  novoStatus: StatusReposicao;
+  reposicaoId?: string;
+  statusAnterior?: StatusReposicao;
+  novoStatus?: StatusReposicao;
+  tipo?: TipoHistorico;
+  entidade?: "produto" | "local" | "reposicao" | "backup" | "sistema";
+  entidadeId?: string;
   responsavel?: string;
   dataHora: string;
   observacao?: string;
+  descricao?: string;
 };
 
 export type BackupData = {
   app: "ValeRepor";
   versao: number;
   exportadoEm: string;
+  checksum?: string;
   produtos: Produto[];
   locais: Local[];
   reposicoes: Reposicao[];
@@ -62,6 +76,23 @@ export type BackupData = {
     enabled: boolean;
     diasAntecedencia: number;
   };
+};
+
+export type BackupPreview = {
+  app: string;
+  versao: number;
+  produtos: number;
+  locais: number;
+  reposicoes: number;
+  historico: number;
+  exportadoEm?: string;
+};
+
+export type ImportProdutosResultado = {
+  criados: number;
+  atualizados: number;
+  ignorados: number;
+  erros: string[];
 };
 
 export const STATUS_LABEL: Record<StatusReposicao, string> = {

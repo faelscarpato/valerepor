@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   getHistorico,
+  getLastBackupAt,
   getLocais,
   getProdutos,
   getReposicoes,
@@ -22,6 +23,7 @@ export function useData() {
     locais: getLocais(),
     reposicoes: getReposicoes(),
     historico: getHistorico(),
+    lastBackupAt: getLastBackupAt(),
     _tick: tick,
   };
 }
