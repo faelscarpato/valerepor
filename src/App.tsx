@@ -11,13 +11,25 @@ import NovaReposicao from "./pages/NovaReposicao";
 import Produtos from "./pages/Produtos";
 import Locais from "./pages/Locais";
 import Relatorios from "./pages/Relatorios";
+import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 import { seedIfNeeded } from "./lib/storage";
+import { iniciarVerificacaoPeriodica, registrarServiceWorker } from "./lib/notifications";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  useEffect(() => { seedIfNeeded(); }, []);
+  useEffect(() => {
+    seedIfNeeded();
+    registrarServiceWorker().then(() => iniciarVerificacaoPeriodica());
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", (e) => {
+        if (e.data?.type === "verifica-validades") {
+          import("./lib/notifications").then((m) => m.verificarEnotificar(true));
+        }
+      });
+    }
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
