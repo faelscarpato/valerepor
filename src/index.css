@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 150 20% 98%;
+    --background: 150 28% 97%;
     --foreground: 150 15% 12%;
 
     --card: 0 0% 100%;
@@ -46,8 +46,8 @@
 
     --gradient-primary: linear-gradient(135deg, hsl(142 71% 38%), hsl(142 76% 50%));
     --gradient-danger: linear-gradient(135deg, hsl(0 84% 55%), hsl(15 90% 55%));
-    --shadow-card: 0 2px 8px -2px hsl(150 20% 20% / 0.08);
-    --shadow-elevated: 0 8px 24px -8px hsl(150 30% 20% / 0.18);
+    --shadow-card: 0 8px 24px -18px hsl(150 30% 20% / 0.24), 0 1px 2px hsl(150 20% 20% / 0.06);
+    --shadow-elevated: 0 20px 55px -28px hsl(150 38% 18% / 0.42), 0 8px 20px -12px hsl(142 76% 35% / 0.22);
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 150 15% 25%;
@@ -95,8 +95,17 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    min-height: 100vh;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background:
+      radial-gradient(circle at top left, hsl(142 76% 50% / 0.10), transparent 34rem),
+      radial-gradient(circle at top right, hsl(45 95% 50% / 0.08), transparent 30rem),
+      hsl(var(--background));
+  }
+
+  ::selection {
+    @apply bg-primary text-primary-foreground;
   }
 }
 
@@ -112,5 +121,14 @@
   }
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
+  }
+  .shadow-green {
+    box-shadow: 0 14px 30px -18px hsl(142 76% 35% / 0.65);
+  }
+  .shadow-dock {
+    box-shadow: 0 18px 48px -18px hsl(150 30% 20% / 0.34), 0 0 0 1px hsl(0 0% 100% / 0.36) inset;
+  }
+  .shadow-fab {
+    box-shadow: 0 18px 34px -16px hsl(142 76% 35% / 0.68);
   }
 }
