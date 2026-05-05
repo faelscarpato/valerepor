@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,18 @@ export default function NovaReposicao() {
   const produtoSelecionado = produtos.find((p) => p.id === form.produtoId);
   const localSelecionado = locais.find((l) => l.id === form.localId);
 
+  useEffect(() => {
+    if (!form.produtoId && produtos.length === 1) {
+      setForm((f) => ({ ...f, produtoId: produtos[0].id }));
+    }
+  }, [form.produtoId, produtos]);
+
+  useEffect(() => {
+    if (!form.localId && locais.length === 1) {
+      setForm((f) => ({ ...f, localId: locais[0].id }));
+    }
+  }, [form.localId, locais]);
+
   function update<K extends keyof typeof form>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
   }
@@ -75,8 +87,16 @@ export default function NovaReposicao() {
     e.preventDefault();
     const quantidade = Number(form.quantidade);
 
-    if (!form.produtoId || !form.localId || !form.quantidade || !form.dataValidade || !form.responsavel.trim()) {
-      toast.error("Preencha produto, local, quantidade, validade e responsável.");
+    const camposFaltando = [
+      !form.produtoId ? "produto" : "",
+      !form.localId ? "setor/prateleira" : "",
+      !form.quantidade ? "quantidade" : "",
+      !form.dataValidade ? "validade" : "",
+      !form.responsavel.trim() ? "responsável" : "",
+    ].filter(Boolean);
+
+    if (camposFaltando.length > 0) {
+      toast.error(`Preencha: ${camposFaltando.join(", ")}.`);
       return;
     }
 
